@@ -1,1 +1,1 @@
-# sonsoff_s31_xmpp
+# sonoff_s31_xmpp
