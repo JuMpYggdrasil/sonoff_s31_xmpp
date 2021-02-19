@@ -150,13 +150,15 @@ void xmlManage(void) {
                     if (DomainId.startsWith(LD1)) {
                         if (ItemId.startsWith(LD1LN1)) {
                             //??? = VariableDataString.toInt();
-                            Serial.println(VariableDataString.toInt());
+                            DEBUG_MSG(VariableDataString.toInt());
+                            DEBUG_MSG(F("\n"));
                         }
                         IEC61850_8_2.setDataValue_flag = true;
                     } else if (DomainId.startsWith(LD2)) {
                         if (ItemId.startsWith(LD2LN1)) {
                             //??? = VariableDataString.toInt();
-                            Serial.println(VariableDataString.toInt());
+                            DEBUG_MSG(VariableDataString.toInt());
+                            DEBUG_MSG(F("\n"));
                         }
                         IEC61850_8_2.setDataValue_flag = true;
                     }
@@ -189,13 +191,15 @@ void xmlManage(void) {
 void xmlPostManage(void) {
     bool manageDataStruct_flag = false;
     if (huge_struct_data_flag) {
-        Serial.print(F("HUGE:"));
-        Serial.println(SPIFFS.begin());
+        DEBUG_MSG(F("HUGE:"));
+        DEBUG_MSG(SPIFFS.begin());
+        DEBUG_MSG(F("\n"));
 
         File dummyFile = SPIFFS.open("/file.txt", "r");
         if (dummyFile) {
             String structDataString = dummyFile.readStringUntil('\n');
-            Serial.println(structDataString);
+            DEBUG_MSG(structDataString);
+            DEBUG_MSG(F("\n"));
         }
         dummyFile.close();
 

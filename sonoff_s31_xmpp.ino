@@ -91,6 +91,14 @@
 
 //*****************************************************************************************
 
+#ifdef DEBUG_ESP_PORT
+#define DEBUG_MSG(...) DEBUG_ESP_PORT.printf( __VA_ARGS__ )
+#else
+#define DEBUG_MSG(...)
+#endif
+
+
+
 const char* ssid     = "JUMP";
 const char* password = "025260652";
 //const char* ssid     = "D-Link 531/70";
@@ -98,7 +106,7 @@ const char* password = "025260652";
 
 // Update these with values suitable for your network.
 
-byte server[] = {192, 168, 1, 40};
+byte server[] = {192, 168, 1, 38};
 
 int counter = 0;
 long reconnectTimeout = 0;
@@ -217,11 +225,11 @@ void setup()
     pinMode(LNofBatStatusPin, INPUT);
 
     doConnect();
-    Serial.print(F("\ninit\n"));
+    DEBUG_MSG(F("\ninit\n"));
 #ifdef USE_IEC61850_8_2_REDUCTION_FORM
-    Serial.print(F("\nUSE_IEC61850_8_2_REDUCTION_FORM\n"));
+    DEBUG_MSG(F("\nUSE_IEC61850_8_2_REDUCTION_FORM\n"));
 #else
-    Serial.print(F("\nnot USE_IEC61850_8_2_REDUCTION_FORM\n"));
+    DEBUG_MSG(F("\nnot USE_IEC61850_8_2_REDUCTION_FORM\n"));
 #endif
     client.client.setTimeout(80);
 }
@@ -233,14 +241,16 @@ void loop() {
     xmppStanza = client.getAllData();
     int xmppStanzaLength = xmppStanza.length();
     if (xmppStanzaLength > 0) {
-        Serial.print(F("\n"));
-        Serial.print(F("input["));
-        Serial.print(xmppStanzaLength);
-        Serial.print(F("] "));
-        Serial.println(xmppStanza);
+        DEBUG_MSG(F("\n"));
+        DEBUG_MSG(F("input["));
+        DEBUG_MSG(xmppStanzaLength);
+        DEBUG_MSG(F("] "));
+        DEBUG_MSG(xmppStanza);
+        DEBUG_MSG(F("\n"));
         xmlParser();
 
-        //Serial.println(ESP.getFreeHeap(), DEC);
+        //DEBUG_MSG(ESP.getFreeHeap(), DEC);
+        //DEBUG_MSG(F("\n"));
         if (xmppStanzaLength < 1000) {//current max 934 Control Select with value
             xmlManage();
         } else {
@@ -250,8 +260,9 @@ void loop() {
         }
         xmlResponse();
         unsigned long t2 = millis();
-        Serial.print(F("t:"));
-        Serial.println(t2 - t1);
+        DEBUG_MSG(F("t:"));
+        DEBUG_MSG(t2 - t1);
+        DEBUG_MSG(F("\n"));
     }
 }
 
@@ -267,7 +278,8 @@ bool extracthugeDataToFlash(void) {
         xmppStanza.remove(indexF + 29, indexB - indexF - 29);
         xmppStanza.remove(indexF);
 
-        Serial.println(SPIFFS.begin());
+        DEBUG_MSG(SPIFFS.begin());
+        DEBUG_MSG(F("\n"));
         File dummyFile = SPIFFS.open("/file.txt", "w");
         if (dummyFile) {
             dummyFile.print(structDataString.c_str());
@@ -284,22 +296,23 @@ void doConnect()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.print(F("Starting wifi\n"));
+        DEBUG_MSG(F("Starting wifi\n"));
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
-            Serial.print(F("."));
+            DEBUG_MSG(F("."));
         }
-        Serial.print(F("\nWiFi connected\n"));
-        //Serial.print(F("\nIP address: "));
-        //Serial.println(WiFi.localIP());
+        DEBUG_MSG(F("\nWiFi connected\n"));
+        //DEBUG_MSG(F("\nIP address: "));
+        //DEBUG_MSG(WiFi.localIP());
+        //DEBUG_MSG(F("\n"));
     }
 
     if (!client.client.connected())
     {
         //client.client.stopAll();
-        Serial.print(F("Connecting to xmpp\n"));
+        DEBUG_MSG(F("Connecting to xmpp\n"));
         delay(500);
         /* Connect to the XMPP server mads@skythree.inventit.dk */
         if (client.connect(USERNAME, DOMAIN, RESOURCE, PASSWORD))

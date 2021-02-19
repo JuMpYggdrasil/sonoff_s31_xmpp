@@ -5,15 +5,16 @@ void xmlParser() {//xmppStanza string parse
 
     XMLDocument xmlDocument;
 
-    Serial.print(ESP.getFreeHeap(), DEC);
-    Serial.print(F(" --> "));
+    DEBUG_MSG(ESP.getFreeHeap(), DEC);
+    DEBUG_MSG(F(" --> "));
     // check format that can parser & parse
     if (xmlDocument.Parse(xmppStanza.c_str()) != XML_SUCCESS) {
-        Serial.println(F("Error parsing"));
+        DEBUG_MSG(F("Error parsing\n"));
         return;
     }
 
-    Serial.println(ESP.getFreeHeap(), DEC);
+    DEBUG_MSG(ESP.getFreeHeap(), DEC);
+    DEBUG_MSG(F("\n"));
 
     XMLElement* root = xmlDocument.RootElement();//iq, presence, message
 
@@ -22,10 +23,11 @@ void xmlParser() {//xmppStanza string parse
 
         if (strcmp(rootName, "iq") == 0) { //iq stanza
             if (root->QueryStringAttribute("type", &attributeCString) != XML_SUCCESS) {
-                Serial.println(F("type:-"));
+                DEBUG_MSG(F("type:-\n"));
             } else {
-                Serial.print(F("type: "));//IEC61850-8-2 APPENDIX D
-                Serial.println(attributeCString);
+                DEBUG_MSG(F("type: "));//IEC61850-8-2 APPENDIX D
+                DEBUG_MSG(attributeCString);
+                DEBUG_MSG(F("\n"));
 
                 if (strcmp(attributeCString, "get") == 0) {
                     XMPP_8_2.type_get_flag = true;
@@ -40,7 +42,7 @@ void xmlParser() {//xmppStanza string parse
                         } else if (strcmp(uTagName, "ping") == 0) {
                             XMPP_8_2.ping_flag = true;
                         } else {
-                            Serial.print(F("not confirmed_RequestPDU\n"));
+                            DEBUG_MSG(F("not confirmed_RequestPDU\n"));
                         }
                         if (NULL != envelopElement) {
                             XMLElement* serviceElement = envelopElement->FirstChildElement(ConfirmedServiceRequest)->FirstChildElement();
@@ -55,29 +57,32 @@ void xmlParser() {//xmppStanza string parse
                                     parseItemId(domain_specific);
 
                                     if (serviceElement->QueryBoolAttribute(specificationWithResult, &attributeBool) != XML_SUCCESS) {
-                                        Serial.print(F("Could not obtain the attribute\n"));
+                                        DEBUG_MSG(F("Could not obtain the attribute\n"));
                                     } else {
-                                        Serial.print(F("attr: "));
-                                        Serial.println(attributeBool);
+                                        DEBUG_MSG(F("attr: "));
+                                        DEBUG_MSG(attributeBool);
+                                        DEBUG_MSG(F("\n"));
                                     }
                                 } else if (strcmp(strTagName, "getNameList") == 0) {
                                     XMLElement* domainSpecificElement = serviceElement->FirstChildElement("objectScope")->FirstChildElement("domainSpecific");
                                     if (NULL != domainSpecificElement) {
                                         const char* itemId = domainSpecificElement->GetText();
                                         ItemId = String(itemId);
-                                        Serial.println(ItemId);
+                                        DEBUG_MSG(ItemId);
+                                        DEBUG_MSG(F("\n"));
                                         XMPP_8_2.domainSpecific_flag = true;
                                     }
                                 } else if (strcmp(strTagName, "getVariableAccessAttributes") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else if (strcmp(strTagName, "write") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else if (strcmp(strTagName, "defineNamedVariableList") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else if (strcmp(strTagName, "deleteNamedVariableList") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else {
-                                    Serial.println(F("unknown serviceElement"));
+                                    DEBUG_MSG(F("unknown serviceElement"));
+                                    DEBUG_MSG(F("\n"));
                                 }
                             }//if (NULL != serviceElement) {
                         } //if (NULL != envelopElement) {
@@ -93,7 +98,7 @@ void xmlParser() {//xmppStanza string parse
                         } else if (strcmp(uTagName, "cRP") == 0) {
                             envelopElement = root->FirstChildElement("cRP");//"confirmed_RequestPDU"
                         } else {
-                            Serial.println(F("not confirmed_RequestPDU"));
+                            DEBUG_MSG(F("not confirmed_RequestPDU"));
                         }//confirmed_RequestPDU Element
 
                         if (NULL != envelopElement) {
@@ -115,7 +120,7 @@ void xmlParser() {//xmppStanza string parse
                                         if (strcmp(variableName, "integer") == 0) {
                                             const char* dataInteger = variableElement->GetText();
                                             VariableDataString = String(dataInteger);
-                                            Serial.println(VariableDataString);
+                                            DEBUG_MSG(VariableDataString);
 
                                             //else if (strcmp(variableName, "float") == 0) {
                                             //else if (strcmp(variableName, "boolean") == 0) {
@@ -131,68 +136,83 @@ void xmlParser() {//xmppStanza string parse
                                             //} else {
                                             //Serial.println(F("octet not found"));
                                             //}
-                                            Serial.println(F("struct found"));
-                                            Serial.println(ESP.getFreeHeap(), DEC);
+                                            DEBUG_MSG(F("struct found"));
+                                            DEBUG_MSG(F("\n"));
+                                            DEBUG_MSG(ESP.getFreeHeap(), DEC);
+                                            DEBUG_MSG(F("\n"));
                                         }//strcmp(variableName,
                                     }//NULL != variableElement
                                 } else if (strcmp(strTagName, "getNameList") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else if (strcmp(strTagName, "read") == 0) {
-                                    Serial.print(F("wrong iq type"));
+                                    DEBUG_MSG(F("wrong iq type"));
                                 } else {
-                                    Serial.println(F("unknown serviceElement"));
+                                    DEBUG_MSG(F("unknown serviceElement"));
+                                    DEBUG_MSG(F("\n"));
                                 }
                             }//serviceElement
                         }//envelopElement
                     }//NULL != unknownElement
 
-                    Serial.println(F("type set"));
+                    DEBUG_MSG(F("type set"));
+                    DEBUG_MSG(F("\n"));
                 } else if (strcmp(attributeCString, "result") == 0) {
                     XMPP_8_2.type_result_flag = true;
 
-                    Serial.println(F("type result"));
+                    DEBUG_MSG(F("type result"));
+                    DEBUG_MSG(F("\n"));
                 } else { //error
-                    Serial.println(F("type error"));
+                    DEBUG_MSG(F("type error"));
+                    DEBUG_MSG(F("\n"));
                 }
             }
 
             if (root->QueryStringAttribute("id", &attributeCString) != XML_SUCCESS) {
-                Serial.println(F("id:-"));
+                DEBUG_MSG(F("id:-"));
+                DEBUG_MSG(F("\n"));
                 attributeId = "";
             } else {
-                Serial.print(F("id: "));
-                Serial.println(attributeCString);
+                DEBUG_MSG(F("id: "));
+                DEBUG_MSG(attributeCString);
+                DEBUG_MSG(F("\n"));
                 attributeId = attributeCString;
             }
 
             if (root->QueryStringAttribute("to", &attributeCString) != XML_SUCCESS) {
-                Serial.println(F("to:-"));
+                DEBUG_MSG(F("to:-"));
+                DEBUG_MSG(F("\n"));
                 attributeTo = "";
             } else {
-                Serial.print(F("to: "));
-                Serial.println(attributeCString);
+                DEBUG_MSG(F("to: "));
+                DEBUG_MSG(attributeCString);
+                DEBUG_MSG(F("\n"));
                 attributeTo = String(attributeCString);
             }
 
             if (root->QueryStringAttribute("from", &attributeCString) != XML_SUCCESS) {
-                Serial.println(F("from:-"));
+                DEBUG_MSG(F("from:-"));
+                DEBUG_MSG(F("\n"));
                 attributeFrom = "";
             } else {
-                Serial.print(F("from: "));
-                Serial.println(attributeCString);
+                DEBUG_MSG(F("from: "));
+                DEBUG_MSG(attributeCString);
+                DEBUG_MSG(F("\n"));
                 attributeFrom = String(attributeCString);
             }
 
         } else if (strcmp(rootName, "presence") == 0) {//presence stanza
-            Serial.println(F("get presence"));
+            DEBUG_MSG(F("get presence"));
+            DEBUG_MSG(F("\n"));
         } else if (strcmp(rootName, "message") == 0) {//message stanza
-            Serial.println(F("get message"));
+            DEBUG_MSG(F("get message"));
+            DEBUG_MSG(F("\n"));
         } else { //not standard stanza
-            Serial.println(F("not standard stanza"));
+            DEBUG_MSG(F("not standard stanza"));
+            DEBUG_MSG(F("\n"));
         }
     } else {
         //check for XML Stream Features
-        Serial.print(F("parse unknown: "));
+        DEBUG_MSG(F("parse unknown: "));
     }
     //Serial.println(ESP.getFreeHeap(), DEC);
     xmlDocument.Clear();
@@ -210,7 +230,8 @@ void parseDomainId(XMLElement * domain_specific_x) {
         if (NULL != domainIdElement) {
             const char* domainId = domainIdElement->GetText();
             DomainId = String(domainId);
-            Serial.println(DomainId);
+            DEBUG_MSG(DomainId);
+            DEBUG_MSG(F("\n"));
             XMPP_8_2.domain_id_flag = true;
         }
     }
@@ -221,7 +242,8 @@ void parseItemId(XMLElement * domain_specific_x) {
         if (NULL != itemIdElement) {
             const char* itemId = itemIdElement->GetText();
             ItemId = String(itemId);
-            Serial.println(ItemId);
+            DEBUG_MSG(ItemId);
+            DEBUG_MSG(F("\n"));
             XMPP_8_2.item_id_flag = true;
         }
     }
@@ -231,9 +253,11 @@ void parseInvokeId(XMLElement * envelop_x) {
     if (NULL != invokeIdElement) {
         const char* invokeID = invokeIdElement->GetText();
         InvokeID = String(invokeID);
-        Serial.println(InvokeID);
+        DEBUG_MSG(InvokeID);
+        DEBUG_MSG(F("\n"));
     } else {
-        Serial.println(F("query not found"));
+        DEBUG_MSG(F("query not found"));
+        DEBUG_MSG(F("\n"));
     }
 }
 
