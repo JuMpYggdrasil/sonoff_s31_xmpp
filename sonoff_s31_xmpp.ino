@@ -25,14 +25,28 @@
 //  | </stream>          |
 //  |--------------------|
 
+#define USE_MDNS true
+
 //#include "C:\Users\chuwl\Documents\Arduino\libraries\arduino-base64-master\Base64.h"
 //https://github.com/adamvr/arduino-base64
 #include <ESP8266WiFi.h>
+
+#ifdef USE_MDNS
+#include <DNSServer.h>
+#include <ESP8266mDNS.h>
+#endif
+
 #include <XMPPClient.h>
 //#include <IEC61850Xmpp.h>
 #include <tinyxml2.h>
 #include "FS.h"
 #include "iec61850_server.h"
+
+
+
+#define HOST_NAME "ied"
+
+
 
 #define USERNAME "esp"//"esp@XMPP.egat.co.th"  "esp"
 #define DOMAIN "XMPP.egat.co.th"
@@ -92,7 +106,7 @@
 //*****************************************************************************************
 
 #ifdef DEBUG_ESP_PORT
-#define DEBUG_MSG(...) DEBUG_ESP_PORT.printf( __VA_ARGS__ )
+#define DEBUG_MSG(...) DEBUG_ESP_PORT.print( __VA_ARGS__ )
 #else
 #define DEBUG_MSG(...)
 #endif
@@ -133,6 +147,9 @@ String ControlResponseString;
 
 String controlObjAttribute;//length <10
 String controlObjSubAttribute;//length <10
+
+
+
 
 
 typedef struct
@@ -264,6 +281,10 @@ void loop() {
         DEBUG_MSG(t2 - t1);
         DEBUG_MSG(F("\n"));
     }
+
+    MDNS.update();
+
+    yield();// Give a time for ESP
 }
 
 
@@ -307,6 +328,17 @@ void doConnect()
         //DEBUG_MSG(F("\nIP address: "));
         //DEBUG_MSG(WiFi.localIP());
         //DEBUG_MSG(F("\n"));
+        String hostNameWifi = HOST_NAME;
+        hostNameWifi.concat(".local");
+
+
+        WiFi.hostname(hostNameWifi);
+
+        if (MDNS.begin(HOST_NAME)) {
+
+        }
+        MDNS.addService("telnet", "tcp", 23);
+
     }
 
     if (!client.client.connected())
