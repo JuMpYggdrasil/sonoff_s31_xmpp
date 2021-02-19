@@ -98,7 +98,7 @@ const char* password = "025260652";
 
 // Update these with values suitable for your network.
 
-byte server[] = {192, 168, 1, 50};
+byte server[] = {192, 168, 1, 40};
 
 int counter = 0;
 long reconnectTimeout = 0;
