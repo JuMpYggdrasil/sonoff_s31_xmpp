@@ -301,6 +301,8 @@ void setup()
     server.onNotFound(handleNotFound);
 
     server.begin();//================================================
+
+    MDNS.addService("http", "tcp", 80);
 #endif
 
 }
