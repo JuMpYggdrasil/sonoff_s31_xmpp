@@ -25,14 +25,15 @@
 //  | </stream>          |
 //  |--------------------|
 
-#define USE_MDNS true
+//#define USE_WEB_SERVER true
 
 //#include "C:\Users\chuwl\Documents\Arduino\libraries\arduino-base64-master\Base64.h"
 //https://github.com/adamvr/arduino-base64
 #include <ESP8266WiFi.h>
 
-#ifdef USE_MDNS
-#include <DNSServer.h>
+#ifdef USE_WEB_SERVER
+#include <WiFiClient.h>//==========================================
+#include <ESP8266WebServer.h>//====================================
 #include <ESP8266mDNS.h>
 #endif
 
@@ -42,11 +43,7 @@
 #include "FS.h"
 #include "iec61850_server.h"
 
-
-
 #define HOST_NAME "ied"
-
-
 
 #define USERNAME "esp"//"esp@XMPP.egat.co.th"  "esp"
 #define DOMAIN "XMPP.egat.co.th"
@@ -120,7 +117,7 @@ const char* password = "025260652";
 
 // Update these with values suitable for your network.
 
-byte server[] = {192, 168, 1, 38};
+byte xmppServer[] = {192, 168, 1, 38};
 
 int counter = 0;
 long reconnectTimeout = 0;
@@ -148,9 +145,31 @@ String ControlResponseString;
 String controlObjAttribute;//length <10
 String controlObjSubAttribute;//length <10
 
+#ifdef USE_WEB_SERVER
+ESP8266WebServer server(80);//=====================================
 
-
-
+void handleRoot() {
+    //digitalWrite(led, 1);
+    server.send(200, "text/plain", "hello from esp8266!");
+    //digitalWrite(led, 0);
+}
+void handleNotFound() {
+    //digitalWrite(led, 1);
+    String message = "File Not Found\n\n";
+    message += "URI: ";
+    message += server.uri();
+    message += "\nMethod: ";
+    message += (server.method() == HTTP_GET) ? "GET" : "POST";
+    message += "\nArguments: ";
+    message += server.args();
+    message += "\n";
+    for (uint8_t i = 0; i < server.args(); i++) {
+        message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+    }
+    server.send(404, "text/plain", message);
+    //digitalWrite(led, 0);
+}
+#endif
 
 typedef struct
 {
@@ -233,7 +252,7 @@ uint8_t SBO_CO_enha_secure_state = Unselected;
 
 //======================
 
-XMPPClient client(server, 5223);      //5223
+XMPPClient client(xmppServer, 5223);      //5223
 
 void setup()
 {
@@ -249,6 +268,41 @@ void setup()
     DEBUG_MSG(F("\nnot USE_IEC61850_8_2_REDUCTION_FORM\n"));
 #endif
     client.client.setTimeout(80);
+
+
+#ifdef USE_WEB_SERVER
+    if (MDNS.begin("esp8266")) {
+        DEBUG_MSG("MDNS responder started\n");
+    }
+
+    server.on("/", handleRoot);//==================================
+
+    server.on("/inline", []() {
+        server.send(200, "text/plain", "this works as well");
+    });
+
+    server.on("/gif", []() {
+        static const uint8_t gif[] PROGMEM = {
+            0x47, 0x49, 0x46, 0x38, 0x37, 0x61, 0x10, 0x00, 0x10, 0x00, 0x80, 0x01,
+            0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x2c, 0x00, 0x00, 0x00, 0x00,
+            0x10, 0x00, 0x10, 0x00, 0x00, 0x02, 0x19, 0x8c, 0x8f, 0xa9, 0xcb, 0x9d,
+            0x00, 0x5f, 0x74, 0xb4, 0x56, 0xb0, 0xb0, 0xd2, 0xf2, 0x35, 0x1e, 0x4c,
+            0x0c, 0x24, 0x5a, 0xe6, 0x89, 0xa6, 0x4d, 0x01, 0x00, 0x3b
+        };
+        char gif_colored[sizeof(gif)];
+        memcpy_P(gif_colored, gif, sizeof(gif));
+        // Set the background to a random set of colors
+        gif_colored[16] = millis() % 256;
+        gif_colored[17] = millis() % 256;
+        gif_colored[18] = millis() % 256;
+        server.send(200, "image/gif", gif_colored, sizeof(gif_colored));
+    });
+
+    server.onNotFound(handleNotFound);
+
+    server.begin();//================================================
+#endif
+
 }
 
 void loop() {
@@ -281,8 +335,10 @@ void loop() {
         DEBUG_MSG(t2 - t1);
         DEBUG_MSG(F("\n"));
     }
-
+#ifdef USE_WEB_SERVER
+    server.handleClient();//=======================================
     MDNS.update();
+#endif
 
     yield();// Give a time for ESP
 }
@@ -328,16 +384,8 @@ void doConnect()
         //DEBUG_MSG(F("\nIP address: "));
         //DEBUG_MSG(WiFi.localIP());
         //DEBUG_MSG(F("\n"));
-        String hostNameWifi = HOST_NAME;
-        hostNameWifi.concat(".local");
 
 
-        WiFi.hostname(hostNameWifi);
-
-        if (MDNS.begin(HOST_NAME)) {
-
-        }
-        MDNS.addService("telnet", "tcp", 23);
 
     }
 
