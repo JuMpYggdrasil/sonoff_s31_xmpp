@@ -36,27 +36,27 @@ void xmlParser() {//xmppStanza string parse
                     if (NULL != unknownElement) {
                         const char* uTagName = unknownElement->Name();
                         if (strcmp(uTagName, "query") == 0) {
-                            envelopElement = unknownElement->FirstChildElement(confirmed_RequestPDU);//"confirmed_RequestPDU"
-                        } else if (strcmp(uTagName, confirmed_RequestPDU) == 0) {
-                            envelopElement = root->FirstChildElement(confirmed_RequestPDU);//"confirmed_RequestPDU"
+                            envelopElement = unknownElement->FirstChildElement(confirmed_RequestPDU_tag);//"confirmed_RequestPDU"
+                        } else if (strcmp(uTagName, confirmed_RequestPDU_tag) == 0) {
+                            envelopElement = root->FirstChildElement(confirmed_RequestPDU_tag);//"confirmed_RequestPDU"
                         } else if (strcmp(uTagName, "ping") == 0) {
                             XMPP_8_2.ping_flag = true;
                         } else {
                             DEBUG_MSG(F("not confirmed_RequestPDU\n"));
                         }
                         if (NULL != envelopElement) {
-                            XMLElement* serviceElement = envelopElement->FirstChildElement(ConfirmedServiceRequest)->FirstChildElement();
+                            XMLElement* serviceElement = envelopElement->FirstChildElement(ConfirmedServiceRequest_tag)->FirstChildElement();
                             if (NULL != serviceElement) {
                                 parseInvokeId(envelopElement);
                                 const char* strTagName = serviceElement->Name();
                                 if (strcmp(strTagName, "read") == 0) {
                                     XMPP_8_2.read_flag = true;
-                                    XMLElement* domain_specific = serviceElement->FirstChildElement(variableAccessSpecification)->FirstChildElement(listOfVariable)->FirstChildElement("SEQUENCE")->FirstChildElement(variableSpecification)->FirstChildElement("name")->FirstChildElement("domain-specific");
+                                    XMLElement* domain_specific = serviceElement->FirstChildElement(variableAccessSpecification_tag)->FirstChildElement(listOfVariable_tag)->FirstChildElement(SEQUENCE_tag)->FirstChildElement(variableSpecification_tag)->FirstChildElement(name_tag)->FirstChildElement(domain_specific_tag);
 
                                     parseDomainId(domain_specific);
                                     parseItemId(domain_specific);
 
-                                    if (serviceElement->QueryBoolAttribute(specificationWithResult, &attributeBool) != XML_SUCCESS) {
+                                    if (serviceElement->QueryBoolAttribute(specificationWithResult_tag, &attributeBool) != XML_SUCCESS) {
                                         DEBUG_MSG(F("Could not obtain the attribute\n"));
                                     } else {
                                         DEBUG_MSG(F("attr: "));
@@ -64,7 +64,7 @@ void xmlParser() {//xmppStanza string parse
                                         DEBUG_MSG(F("\n"));
                                     }
                                 } else if (strcmp(strTagName, "getNameList") == 0) {
-                                    XMLElement* domainSpecificElement = serviceElement->FirstChildElement("objectScope")->FirstChildElement("domainSpecific");
+                                    XMLElement* domainSpecificElement = serviceElement->FirstChildElement(objectScope_tag)->FirstChildElement(domainSpecific_tag);
                                     if (NULL != domainSpecificElement) {
                                         const char* itemId = domainSpecificElement->GetText();
                                         ItemId = String(itemId);
@@ -94,27 +94,27 @@ void xmlParser() {//xmppStanza string parse
                     if (NULL != unknownElement) {
                         const char* uTagName = unknownElement->Name();
                         if (strcmp(uTagName, "query") == 0) {
-                            envelopElement = unknownElement->FirstChildElement(confirmed_RequestPDU);//"confirmed_RequestPDU"
-                        } else if (strcmp(uTagName, "cRP") == 0) {
-                            envelopElement = root->FirstChildElement("cRP");//"confirmed_RequestPDU"
+                            envelopElement = unknownElement->FirstChildElement(confirmed_RequestPDU_tag);//"confirmed_RequestPDU"
+                        } else if (strcmp(uTagName, confirmed_RequestPDU_tag) == 0) {
+                            envelopElement = root->FirstChildElement(confirmed_RequestPDU_tag);//"confirmed_RequestPDU"
                         } else {
                             DEBUG_MSG(F("not confirmed_RequestPDU"));
                         }//confirmed_RequestPDU Element
 
                         if (NULL != envelopElement) {
-                            XMLElement* serviceElement = envelopElement->FirstChildElement(ConfirmedServiceRequest)->FirstChildElement();
+                            XMLElement* serviceElement = envelopElement->FirstChildElement(ConfirmedServiceRequest_tag)->FirstChildElement();
                             if (NULL != serviceElement) {
                                 parseInvokeId(envelopElement);
 
                                 const char* strTagName = serviceElement->Name();
                                 if (strcmp(strTagName, "write") == 0) {
                                     XMPP_8_2.write_flag = true;
-                                    XMLElement* domain_specific = serviceElement->FirstChildElement(variableAccessSpecification)->FirstChildElement(listOfVariable)->FirstChildElement("SEQUENCE")->FirstChildElement(variableSpecification)->FirstChildElement("name")->FirstChildElement("domain-specific");
+                                    XMLElement* domain_specific = serviceElement->FirstChildElement(variableAccessSpecification_tag)->FirstChildElement(listOfVariable_tag)->FirstChildElement(SEQUENCE_tag)->FirstChildElement(variableSpecification_tag)->FirstChildElement(name_tag)->FirstChildElement(domain_specific_tag);
 
                                     parseDomainId(domain_specific);//Store data in string DomainId,and set flag XMPP_8_2.domain_id_flag
                                     parseItemId(domain_specific);//Store data in string ItemId,and set flag XMPP_8_2.item_id_flag
 
-                                    XMLElement* variableElement = serviceElement->FirstChildElement("listOfData")->FirstChildElement("Data")->FirstChildElement();
+                                    XMLElement* variableElement = serviceElement->FirstChildElement(listOfData_tag)->FirstChildElement(Data_tag)->FirstChildElement();
                                     if (NULL != variableElement) {
                                         const char* variableName = variableElement->Name();
                                         if (strcmp(variableName, "integer") == 0) {
