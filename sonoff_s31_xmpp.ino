@@ -1,10 +1,22 @@
-//Sketch uses 453612 bytes (43%) of program storage space. Maximum is 1044464 bytes.
-//Global variables use 31284 bytes (38%) of dynamic memory, leaving 50636 bytes for local variables. Maximum is 81920 bytes.
+// Sketch uses 490852 bytes (46%) of program storage space. Maximum is 1044464 bytes.
+// Global variables use 31684 bytes (38%) of dynamic memory, leaving 50236 bytes for local variables. Maximum is 81920 bytes.
+// Sketch uses 490852 bytes (46%) of program storage space. Maximum is 1044464 bytes.
+// Global variables use 31684 bytes (38%) of dynamic memory, leaving 50236 bytes for local variables. Maximum is 81920 bytes.
 // input[126] <iq type="get" id="967-873" to="esp@xmpp.egat.co.th/8n1x08ixsd" from="xmpp.egat.co.th"><query xmlns="jabber:iq:version"/></iq>
+// open debug serial
 // 15088 --> 6688
+// correct bug authen2 in xmppclient library
 // 14536 --> 6168
+// improve authen2 in xmppclient library
 // 15032 --> 6664
+// improve USE_IEC61850_8_2_REDUCTION_FORM
 // 16040 --> 7672
+// inclue web server
+// 13320 --> 4952
+// reduce string size from 2000 to 1500 xmppStanza.reserve(1500); *may be to 1100
+// 13832 --> 5464
+// use F() and String(F("")).c_str()
+// 14984 --> 6616
 
 // *note: need to disable firewall on openfire server side
 // Extensible Messaging and Presence Protocol (XMPP)
@@ -33,7 +45,7 @@
 //  | </stream>          |
 //  |--------------------|
 
-//#define USE_WEB_SERVER true
+#define USE_WEB_SERVER true
 #define DEBUG_MSG(...) Serial.print( __VA_ARGS__ )
 
 //#include "C:\Users\chuwl\Documents\Arduino\libraries\arduino-base64-master\Base64.h"
@@ -91,6 +103,10 @@
 #define ConfirmedServiceRequest_tag String(F("CSR")).c_str()
 #define variableAccessSpecification_tag String(F("vAS")).c_str()
 #define variableSpecification_tag String(F("vS")).c_str()
+//#define confirmed_RequestPDU_tag "cRP"
+//#define ConfirmedServiceRequest_tag "CSR"
+//#define variableAccessSpecification_tag "vAS"
+//#define variableSpecification_tag "vS"
 //#define alternateAccess_tag String(F("aA")).c_str()
 #define specificationWithResult_tag String(F("sWR")).c_str()
 #define listOfVariable_tag String(F("lOV")).c_str()
@@ -122,11 +138,6 @@
 #endif
 
 //*****************************************************************************************
-
-
-
-
-
 
 
 const char* ssid     = "JUMP";
@@ -305,6 +316,7 @@ typedef struct
 IEC61850_8_2_t IEC61850_8_2;
 
 String xmppStanza;
+//String firstXmlTag;
 
 //======================
 // CtrlModels definition
@@ -386,21 +398,25 @@ void loop() {
         DEBUG_MSG(F("] "));
         DEBUG_MSG(xmppStanza);
         DEBUG_MSG(F("\n"));
-        xmlParser();
-
         DEBUG_MSG(F("\nHeap:"));
         DEBUG_MSG(ESP.getFreeHeap(), DEC);
         DEBUG_MSG(F("\n"));
         DEBUG_MSG(xmppStanzaLength);
         DEBUG_MSG(F("\n"));
-        if (xmppStanzaLength < 900) {//current max 934 Control Select with value
+#ifdef USE_XMPP_CLIENT_SERIAL_DEBUG
+        if (xmppStanzaLength < 500) {//current max 934 Control Select with value
+#else
+        if (xmppStanzaLength < 1000) {
+#endif
+            xmlParser();
             xmlManage();
+            xmlResponse();
         } else {
+            DEBUG_MSG(F("\nHuge\n"));
             //            if (extracthugeDataToFlash()) { //set huge_struct_data_flag
             //                xmlManage();
             //            }//if package is too large Don't support it.
         }
-        xmlResponse();
         unsigned long t2 = millis();
         DEBUG_MSG(F("t:"));
         DEBUG_MSG(t2 - t1);
@@ -506,5 +522,6 @@ void SetupStringReserve(void) {
 
     VariableDataString.reserve(16);
     ControlResponseString.reserve(64);
-    xmppStanza.reserve(2000);
+    xmppStanza.reserve(1500);//******* 1100
+    //firstXmlTag.reserve();
 }
