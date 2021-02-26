@@ -1,7 +1,5 @@
-// Sketch uses 490852 bytes (46%) of program storage space. Maximum is 1044464 bytes.
-// Global variables use 31684 bytes (38%) of dynamic memory, leaving 50236 bytes for local variables. Maximum is 81920 bytes.
-// Sketch uses 490852 bytes (46%) of program storage space. Maximum is 1044464 bytes.
-// Global variables use 31684 bytes (38%) of dynamic memory, leaving 50236 bytes for local variables. Maximum is 81920 bytes.
+//Sketch uses 505932 bytes (48%) of program storage space. Maximum is 1044464 bytes.
+//Global variables use 31804 bytes (38%) of dynamic memory, leaving 50116 bytes for local variables. Maximum is 81920 bytes.
 // input[126] <iq type="get" id="967-873" to="esp@xmpp.egat.co.th/8n1x08ixsd" from="xmpp.egat.co.th"><query xmlns="jabber:iq:version"/></iq>
 // open debug serial
 // 15088 --> 6688
@@ -11,12 +9,16 @@
 // 15032 --> 6664
 // improve USE_IEC61850_8_2_REDUCTION_FORM
 // 16040 --> 7672
-// inclue web server
+// include web server
 // 13320 --> 4952
 // reduce string size from 2000 to 1500 xmppStanza.reserve(1500); *may be to 1100
 // 13832 --> 5464
 // use F() and String(F("")).c_str()
 // 14984 --> 6616
+// add module OTA
+// 14872 --> 6504,14632 --> 6264
+// edit pbkdf2
+// 14912 --> 6544
 
 // *note: need to disable firewall on openfire server side
 // Extensible Messaging and Presence Protocol (XMPP)
@@ -45,8 +47,14 @@
 //  | </stream>          |
 //  |--------------------|
 
-#define USE_WEB_SERVER true
+#define USE_WEB_SERVER
+//#define USE_REMOTE_DEBUG//suck ram alot--not use
+
+//#define DEBUG_MSG(...)
+//#define DEBUG_MSG_F(...)
 #define DEBUG_MSG(...) Serial.print( __VA_ARGS__ )
+#define DEBUG_MSG_F(...) Serial.print(F( __VA_ARGS__ ))
+
 
 //#include "C:\Users\chuwl\Documents\Arduino\libraries\arduino-base64-master\Base64.h"
 //https://github.com/adamvr/arduino-base64
@@ -59,6 +67,7 @@
 #include <ESP8266mDNS.h>//=========================================
 #include <ESP8266HTTPUpdateServer.h>
 #endif
+
 
 #include <XMPPClient.h>
 #include <tinyxml2.h>
@@ -104,10 +113,6 @@
 #define ConfirmedServiceRequest_tag String(F("CSR")).c_str()
 #define variableAccessSpecification_tag String(F("vAS")).c_str()
 #define variableSpecification_tag String(F("vS")).c_str()
-//#define confirmed_RequestPDU_tag "cRP"
-//#define ConfirmedServiceRequest_tag "CSR"
-//#define variableAccessSpecification_tag "vAS"
-//#define variableSpecification_tag "vS"
 //#define alternateAccess_tag String(F("aA")).c_str()
 #define specificationWithResult_tag String(F("sWR")).c_str()
 #define listOfVariable_tag String(F("lOV")).c_str()
@@ -182,15 +187,10 @@ String controlObjSubAttribute;//length <10
 ESP8266WebServer server(80);//=====================================
 ESP8266HTTPUpdateServer httpUpdater;
 
-const char* serverIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
-
 void handleRoot() {
-    //digitalWrite(led, 1);
     server.send(200, "text/plain", "hello from esp8266!");
-    //digitalWrite(led, 0);
 }
 void handleNotFound() {
-    //digitalWrite(led, 1);
     String message = "File Not Found\n\n";
     message += "URI: ";
     message += server.uri();
@@ -203,9 +203,9 @@ void handleNotFound() {
         message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
     }
     server.send(404, "text/plain", message);
-    //digitalWrite(led, 0);
 }
 #endif
+
 
 typedef struct
 {
@@ -298,11 +298,11 @@ void setup()
     pinMode(LNofBatStatusPin, INPUT);
 
     doConnect();
-    DEBUG_MSG(F("\ninit xxx\n"));
+    DEBUG_MSG_F("\ninit x\n");
 #ifdef USE_IEC61850_8_2_REDUCTION_FORM
-    DEBUG_MSG(F("\nUSE_IEC61850_8_2_REDUCTION_FORM\n"));
+    DEBUG_MSG_F("\nUSE_IEC61850_8_2_REDUCTION_FORM\n");
 #else
-    DEBUG_MSG(F("\nnot USE_IEC61850_8_2_REDUCTION_FORM\n"));
+    DEBUG_MSG_F("\nnot USE_IEC61850_8_2_REDUCTION_FORM\n");
 #endif
     client.client.setTimeout(80);
 
@@ -311,12 +311,13 @@ void setup()
     server.on("/", handleRoot);
     server.onNotFound(handleNotFound);
     httpUpdater.setup(&server);
-    
+
     server.begin();
 
-    MDNS.addService("http", "tcp", 80);
-    //    MDNS.addService("telnet", "tcp", 23);
+    MDNS.addService(String(F("http")).c_str(), String(F("tcp")).c_str(), 80);
+    //MDNS.addService(String(F("telnet")).c_str(), String(F("tcp")).c_str(), 23);
 #endif
+
 
 }
 
@@ -327,35 +328,32 @@ void loop() {
     xmppStanza = client.getAllData();
     int xmppStanzaLength = xmppStanza.length();
     if (xmppStanzaLength > 0) {
-        DEBUG_MSG(F("\n"));
-        DEBUG_MSG(F("input["));
+        DEBUG_MSG_F("\n");
+        DEBUG_MSG_F("input[");
         DEBUG_MSG(xmppStanzaLength);
-        DEBUG_MSG(F("] "));
+        DEBUG_MSG_F("] ");
         DEBUG_MSG(xmppStanza);
-        DEBUG_MSG(F("\n"));
-        DEBUG_MSG(F("\nHeap:"));
+        DEBUG_MSG_F("\n");
+        DEBUG_MSG_F("\nHeap:");
         DEBUG_MSG(ESP.getFreeHeap(), DEC);
-        DEBUG_MSG(F("\n"));
-        DEBUG_MSG(xmppStanzaLength);
-        DEBUG_MSG(F("\n"));
-#ifdef USE_XMPP_CLIENT_SERIAL_DEBUG
-        if (xmppStanzaLength < 500) {//current max 934 Control Select with value
-#else
-        if (xmppStanzaLength < 1000) {
-#endif
+        DEBUG_MSG_F("\n");
+
+//#if  defined (USE_XMPP_CLIENT_SERIAL_DEBUG) || defined (USE_REMOTE_DEBUG)
+//#endif        
+        if (xmppStanzaLength < 200) {//current max 934 Control Select with value
             xmlParser();
             xmlManage();
             xmlResponse();
         } else {
-            DEBUG_MSG(F("\nHuge\n"));
+            DEBUG_MSG_F("\nHuge\n");
             //            if (extracthugeDataToFlash()) { //set huge_struct_data_flag
             //                xmlManage();
             //            }//if package is too large Don't support it.
         }
         unsigned long t2 = millis();
-        DEBUG_MSG(F("t:"));
+        DEBUG_MSG_F("t:");
         DEBUG_MSG(t2 - t1);
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("\n");
     }
 #ifdef USE_WEB_SERVER
     server.handleClient();//=======================================
@@ -378,7 +376,7 @@ bool extracthugeDataToFlash(void) {
         xmppStanza.remove(indexF);
 
         DEBUG_MSG(SPIFFS.begin());
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("\n");
         File dummyFile = SPIFFS.open("/file.txt", "w");
         if (dummyFile) {
             dummyFile.print(structDataString.c_str());
@@ -395,24 +393,24 @@ void doConnect()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        DEBUG_MSG(F("Starting wifi\n"));
+        DEBUG_MSG_F("Starting wifi\n");
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
-            DEBUG_MSG(F("."));
+            DEBUG_MSG_F(".");
         }
-        DEBUG_MSG(F("\nWiFi connected\n"));
-        //DEBUG_MSG(F("\nIP address: "));
+        DEBUG_MSG_F("\nWiFi connected\n");
+        //DEBUG_MSG_F("\nIP address: ");
         //DEBUG_MSG(WiFi.localIP());
-        //DEBUG_MSG(F("\n"));
+        //DEBUG_MSG_F("\n");
         //WiFi.hostname("esp8266.local");
     }
 
     if (!client.client.connected())
     {
         //client.client.stopAll();
-        DEBUG_MSG(F("Connecting to xmpp\n"));
+        DEBUG_MSG_F("Connecting to xmpp\n");
         delay(500);
         /* Connect to the XMPP server mads@skythree.inventit.dk */
         if (client.connect(USERNAME, DOMAIN, RESOURCE, PASSWORD))

@@ -5,24 +5,24 @@ void xmlResponse(void) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'/>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str());
         client.client.write(responseBuffer);
         //Serial.println(responseBuffer);
-        DEBUG_MSG(F("pong"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("pong");
+        DEBUG_MSG_F("\n");
 
         XMPP_8_2.ping_flag = false;
     }
     if (IEC61850_8_2.getDataValue_flag) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><read><listOfAccessResult><AccessResult><success><integer>%d</integer></success></AccessResult></listOfAccessResult></read></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str(), InvokeID.c_str(), singleIntForRead);
         client.client.write(responseBuffer);
-        DEBUG_MSG(F("get"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("get");
+        DEBUG_MSG_F("\n");
 
         IEC61850_8_2.getDataValue_flag = false;
     }
     if (IEC61850_8_2.setDataValue_flag) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><write><CHOICE><success/></CHOICE></write></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str(), InvokeID.c_str());
         client.client.write(responseBuffer);
-        DEBUG_MSG(F("set"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("set");
+        DEBUG_MSG_F("\n");
 
         IEC61850_8_2.setDataValue_flag = false;
     }
@@ -30,16 +30,16 @@ void xmlResponse(void) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><read><listOfAccessResult><AccessResult><success><structure><Data><visible-string>%s</visible-string></Data></structure></success></AccessResult></listOfAccessResult></read></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str(), InvokeID.c_str(), ControlResponseString.c_str());
         client.client.write(responseBuffer);
         //Serial.println(responseBuffer);
-        DEBUG_MSG(F("CO sel"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("CO sel");
+        DEBUG_MSG_F("\n");
 
         IEC61850_8_2.controlSelect_flag = false;
     }
     if (IEC61850_8_2.controlSelectWithValue_flag) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><write><CHOICE><success/></CHOICE></write></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str(), InvokeID.c_str());
         client.client.write(responseBuffer);
-        DEBUG_MSG(F("CO selVal"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("CO selVal");
+        DEBUG_MSG_F("\n");
 
         IEC61850_8_2.controlSelectWithValue_flag = false;
     }
@@ -60,8 +60,8 @@ void xmlResponse(void) {
     if (IEC61850_8_2.getLDDir_flag) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><getNameList moreFollows=\"false\"><listOfIdentifier><Identifier>IEDNameLDINst</Identifier><Identifier>CONTROL</Identifier></listOfIdentifier></getNameList></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo.c_str(), attributeFrom.c_str(), attributeId.c_str(), InvokeID.c_str());
         client.client.write(responseBuffer);
-        DEBUG_MSG(F("LDDir"));
-        DEBUG_MSG(F("\n"));
+        DEBUG_MSG_F("LDDir");
+        DEBUG_MSG_F("\n");
 
         IEC61850_8_2.getLDDir_flag = false;
     }
