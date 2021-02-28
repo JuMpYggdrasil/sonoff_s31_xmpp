@@ -8,7 +8,8 @@ void xmlParser() {//xmppStanza string parse
     DEBUG_MSG(ESP.getFreeHeap(), DEC);
     DEBUG_MSG_F(" --> ");
     // check format that can parser & parse
-    if (xmlDocument.Parse(xmppStanza.c_str()) != XML_SUCCESS) {
+    //if (xmlDocument.Parse(xmppStanza.c_str()) != XML_SUCCESS) {
+    if (xmlDocument.Parse(xmppStanza) != XML_SUCCESS) {
         DEBUG_MSG_F("Error parsing\n");
         return;
     }
@@ -170,37 +171,38 @@ void xmlParser() {//xmppStanza string parse
             if (root->QueryStringAttribute("id", &attributeCString) != XML_SUCCESS) {
                 DEBUG_MSG_F("id:-");
                 DEBUG_MSG_F("\n");
-                attributeId = "";
+                memset(attributeId, '/0', 64);
             } else {
                 DEBUG_MSG_F("id: ");
                 DEBUG_MSG(attributeCString);
                 DEBUG_MSG_F("\n");
-                attributeId = attributeCString;
+                memcpy(attributeId, attributeCString, 64);
             }
 
             if (root->QueryStringAttribute("to", &attributeCString) != XML_SUCCESS) {
                 DEBUG_MSG_F("to:-");
                 DEBUG_MSG_F("\n");
-                attributeTo = "";
+                memset(attributeTo, '/0', 64);
             } else {
                 DEBUG_MSG_F("to: ");
                 DEBUG_MSG(attributeCString);
                 DEBUG_MSG_F("\n");
-                attributeTo = String(attributeCString);
+                memcpy(attributeTo, attributeCString, 64);
             }
 
             if (root->QueryStringAttribute("from", &attributeCString) != XML_SUCCESS) {
                 DEBUG_MSG_F("from:-");
                 DEBUG_MSG_F("\n");
-                attributeFrom = "";
+                memset(attributeFrom, '/0', 64);
             } else {
                 DEBUG_MSG_F("from: ");
                 DEBUG_MSG(attributeCString);
                 DEBUG_MSG_F("\n");
-                attributeFrom = String(attributeCString);
+                memcpy(attributeFrom, attributeCString, 64);
             }
 
-        } else if (strcmp(rootName, "presence") == 0) {//presence stanza            DEBUG_MSG_F("get presence"));
+        } else if (strcmp(rootName, "presence") == 0) {//presence stanza
+            DEBUG_MSG_F("get presence");
             DEBUG_MSG_F("\n");
         } else if (strcmp(rootName, "message") == 0) {//message stanza
             DEBUG_MSG_F("get message");
@@ -251,7 +253,7 @@ void parseInvokeId(XMLElement * envelop_x) {
     XMLElement* invokeIdElement = envelop_x->FirstChildElement("invokeID");
     if (NULL != invokeIdElement) {
         const char* invokeID = invokeIdElement->GetText();
-        InvokeID = String(invokeID);
+        memcpy(InvokeID, invokeID, 16);
         DEBUG_MSG(InvokeID);
         DEBUG_MSG_F("\n");
     } else {

@@ -1,5 +1,5 @@
-//Sketch uses 505932 bytes (48%) of program storage space. Maximum is 1044464 bytes.
-//Global variables use 31804 bytes (38%) of dynamic memory, leaving 50116 bytes for local variables. Maximum is 81920 bytes.
+//Sketch uses 505804 bytes (48%) of program storage space. Maximum is 1044464 bytes.
+//Global variables use 31948 bytes (38%) of dynamic memory, leaving 49972 bytes for local variables. Maximum is 81920 bytes.
 // input[126] <iq type="get" id="967-873" to="esp@xmpp.egat.co.th/8n1x08ixsd" from="xmpp.egat.co.th"><query xmlns="jabber:iq:version"/></iq>
 // open debug serial
 // 15088 --> 6688
@@ -11,14 +11,24 @@
 // 16040 --> 7672
 // include web server
 // 13320 --> 4952
-// reduce string size from 2000 to 1500 xmppStanza.reserve(1500); *may be to 1100
+// reduce string size from 2000 to 1500 xmppStanza.reserve(1500); *may be to 1300
 // 13832 --> 5464
 // use F() and String(F("")).c_str()
 // 14984 --> 6616
 // add module OTA
 // 14872 --> 6504,14632 --> 6264
 // edit pbkdf2
-// 14912 --> 6544
+// 14856 --> 6488
+// set fingerprint to PROGMEM
+// 14976 --> 6608
+// change string to array of char
+// 15088 --> 6720         (worse(not worst) case[761] 14864 --> 1672)
+// add some debug fn
+// 14888 --> 6520
+// change xmppStanza STRING to charArray
+// 15144 --> 6776
+// edit webserver page not found
+// 15160 --> 6792,15176 --> 6808
 
 // *note: need to disable firewall on openfire server side
 // Extensible Messaging and Presence Protocol (XMPP)
@@ -164,16 +174,15 @@ using namespace tinyxml2;
 
 // # Data String Variable
 // ## iq stanza
-String attributeFrom;
-String attributeTo;
-String attributeId;
+char attributeFrom[64];
+char attributeTo[64];
+char attributeId[64];
 
 String DomainId;
 String ItemId;
-String InvokeID;
+char InvokeID[16];
 
-String LDname;
-String LNname;
+String LDname, LNname;
 
 String VariableDataString;//other xmpp client write
 //String StructerDataString;
@@ -187,11 +196,15 @@ String controlObjSubAttribute;//length <10
 ESP8266WebServer server(80);//=====================================
 ESP8266HTTPUpdateServer httpUpdater;
 
+static const char text_plain[] PROGMEM = "text/plain";
+
 void handleRoot() {
-    server.send(200, "text/plain", "hello from esp8266!");
+    //server.send(200, "text/plain", "hello from esp8266!");
+    server.send_P(200, text_plain, PSTR("hello from esp8266!"));
 }
+
 void handleNotFound() {
-    String message = "File Not Found\n\n";
+    String message = F("File Not Found\n\n");
     message += "URI: ";
     message += server.uri();
     message += "\nMethod: ";
@@ -259,8 +272,11 @@ typedef struct
 } IEC61850_8_2_t;
 IEC61850_8_2_t IEC61850_8_2;
 
-String xmppStanza;
-//String firstXmlTag;
+
+
+//String xmppStanza;
+const int xmppStanzaLenMax = 1500;
+char xmppStanza[xmppStanzaLenMax];
 
 //======================
 // CtrlModels definition
@@ -286,6 +302,8 @@ CO_State_t SBO_CO_norm_secure;//Sel
 CO_State_t SBO_CO_enha_secure;//SelVal
 uint8_t SBO_CO_norm_secure_state = Unselected;
 uint8_t SBO_CO_enha_secure_state = Unselected;
+
+
 
 //======================
 
@@ -325,8 +343,10 @@ void loop() {
     /* Say hello! */
     doConnect();
     unsigned long t1 = millis();
-    xmppStanza = client.getAllData();
-    int xmppStanzaLength = xmppStanza.length();
+    //xmppStanza = client.getAllData();
+    //int xmppStanzaLength = xmppStanza.length();
+    int xmppStanzaLength = client.getAllData(xmppStanza, xmppStanzaLenMax);
+
     if (xmppStanzaLength > 0) {
         DEBUG_MSG_F("\n");
         DEBUG_MSG_F("input[");
@@ -338,16 +358,25 @@ void loop() {
         DEBUG_MSG(ESP.getFreeHeap(), DEC);
         DEBUG_MSG_F("\n");
 
-//#if  defined (USE_XMPP_CLIENT_SERIAL_DEBUG) || defined (USE_REMOTE_DEBUG)
-//#endif        
-        if (xmppStanzaLength < 200) {//current max 934 Control Select with value
+        //#if  defined (USE_XMPP_CLIENT_SERIAL_DEBUG) || defined (USE_REMOTE_DEBUG)
+        //#endif
+        if (xmppStanzaLength < 1000) {//current max 934 Control Select with value
             xmlParser();
+            DEBUG_MSG_F(" xmlParser-> ");
+            DEBUG_MSG(ESP.getFreeHeap(), DEC);
             xmlManage();
+            DEBUG_MSG_F(" xmlManage-> ");
+            DEBUG_MSG(ESP.getFreeHeap(), DEC);
             xmlResponse();
+            DEBUG_MSG_F(" xmlResponse-> ");
+            DEBUG_MSG(ESP.getFreeHeap(), DEC);
         } else {
             DEBUG_MSG_F("\nHuge\n");
             //            if (extracthugeDataToFlash()) { //set huge_struct_data_flag
-            //                xmlManage();
+            //
+            //            xmlParser();
+            //            xmlManage();
+            //            xmlResponse();
             //            }//if package is too large Don't support it.
         }
         unsigned long t2 = millis();
@@ -363,32 +392,31 @@ void loop() {
     yield();// Give a time for ESP
 }
 
-
-bool extracthugeDataToFlash(void) {
-    String structDataString;
-
-    int indexF = xmppStanza.indexOf(F("<listOfData><Data><structure>"));//29 count text
-    int indexB = xmppStanza.indexOf(F("</structure></Data></listOfData>"));
-
-    if ((indexF > 0) && (indexB > 0)) {
-        structDataString = xmppStanza.substring(indexF + 29, indexB);
-        xmppStanza.remove(indexF + 29, indexB - indexF - 29);
-        xmppStanza.remove(indexF);
-
-        DEBUG_MSG(SPIFFS.begin());
-        DEBUG_MSG_F("\n");
-        File dummyFile = SPIFFS.open("/file.txt", "w");
-        if (dummyFile) {
-            dummyFile.print(structDataString.c_str());
-        }
-        dummyFile.close();
-
-        huge_struct_data_flag = true;
-        return true;
-    }
-
-    return false;
-}
+//bool extracthugeDataToFlash(void) {
+//    String structDataString;
+//
+//    int indexF = xmppStanza.indexOf(F("<listOfData><Data><structure>"));//29 count text
+//    int indexB = xmppStanza.indexOf(F("</structure></Data></listOfData>"));
+//
+//    if ((indexF > 0) && (indexB > 0)) {
+//        structDataString = xmppStanza.substring(indexF + 29, indexB);
+//        xmppStanza.remove(indexF + 29, indexB - indexF - 29);
+//        xmppStanza.remove(indexF);
+//
+//        DEBUG_MSG(SPIFFS.begin());
+//        DEBUG_MSG_F("\n");
+//        File dummyFile = SPIFFS.open("/file.txt", "w");
+//        if (dummyFile) {
+//            dummyFile.print(structDataString.c_str());
+//        }
+//        dummyFile.close();
+//
+//        huge_struct_data_flag = true;
+//        return true;
+//    }
+//
+//    return false;
+//}
 void doConnect()
 {
     if (WiFi.status() != WL_CONNECTED)
@@ -441,20 +469,13 @@ void SetupStringReserve(void) {
     controlObjAttribute.reserve(16);
     controlObjSubAttribute.reserve(16);
 
-    attributeFrom.reserve(64);
-    attributeTo.reserve(64);
-    attributeId.reserve(64);
-
     DomainId.reserve(64);
     ItemId.reserve(64);
-    InvokeID.reserve(16);
-
 
     LDname.reserve(16);
     LNname.reserve(16);
 
     VariableDataString.reserve(16);
     ControlResponseString.reserve(64);
-    xmppStanza.reserve(1500);//******* 1100
-    //firstXmlTag.reserve();
+    //xmppStanza.reserve(1500);//******* 1100
 }
