@@ -1,4 +1,4 @@
-void xmlParser() {//xmppStanza string parse
+void xmlParser(char* _xmppStanza, int _xmppStanzaLength) {
     boolean attributeBool;
     const char* attributeCString;
     uint32_t  attributeUint32;
@@ -9,11 +9,10 @@ void xmlParser() {//xmppStanza string parse
     DEBUG_MSG_F(" --> ");
     // check format that can parser & parse
     //if (xmlDocument.Parse(xmppStanza.c_str()) != XML_SUCCESS) {
-    if (xmlDocument.Parse(xmppStanza) != XML_SUCCESS) {
+    if (xmlDocument.Parse(_xmppStanza) != XML_SUCCESS) {
         DEBUG_MSG_F("Error parsing\n");
         return;
     }
-
     DEBUG_MSG(ESP.getFreeHeap(), DEC);
     DEBUG_MSG_F("\n");
 
@@ -137,6 +136,7 @@ void xmlParser() {//xmppStanza string parse
                                             //} else {
                                             //Serial.println(F("octet not found"));
                                             //}
+                                            struct_data_flag = true;
                                             DEBUG_MSG_F("struct found");
                                             DEBUG_MSG_F("\n");
                                             DEBUG_MSG(ESP.getFreeHeap(), DEC);
@@ -227,7 +227,7 @@ void xmlParser() {//xmppStanza string parse
 
 void parseDomainId(XMLElement * domain_specific_x) {
     if (NULL != domain_specific_x) {
-        XMLElement* domainIdElement = domain_specific_x->FirstChildElement("domainId");
+        XMLElement* domainIdElement = domain_specific_x->FirstChildElement(domainId_tag);
         if (NULL != domainIdElement) {
             const char* domainId = domainIdElement->GetText();
             DomainId = String(domainId);
@@ -239,7 +239,7 @@ void parseDomainId(XMLElement * domain_specific_x) {
 }
 void parseItemId(XMLElement * domain_specific_x) {
     if (NULL != domain_specific_x) {
-        XMLElement* itemIdElement = domain_specific_x->FirstChildElement("itemId");
+        XMLElement* itemIdElement = domain_specific_x->FirstChildElement(itemId_tag);
         if (NULL != itemIdElement) {
             const char* itemId = itemIdElement->GetText();
             ItemId = String(itemId);
@@ -250,7 +250,7 @@ void parseItemId(XMLElement * domain_specific_x) {
     }
 }
 void parseInvokeId(XMLElement * envelop_x) {
-    XMLElement* invokeIdElement = envelop_x->FirstChildElement("invokeID");
+    XMLElement* invokeIdElement = envelop_x->FirstChildElement(invokeID_tag);
     if (NULL != invokeIdElement) {
         const char* invokeID = invokeIdElement->GetText();
         memcpy(InvokeID, invokeID, 16);

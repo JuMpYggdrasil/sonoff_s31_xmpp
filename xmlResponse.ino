@@ -10,6 +10,7 @@ void xmlResponse(void) {
 
         XMPP_8_2.ping_flag = false;
     }
+    
     if (IEC61850_8_2.getDataValue_flag) {
         sprintf_P(responseBuffer, PSTR("<iq from='%s' to='%s' id='%s' type='result'><query><confirmed-ResponsePDU><invokeID>%s</invokeID><ConfirmedServiceResponse><read><listOfAccessResult><AccessResult><success><integer>%d</integer></success></AccessResult></listOfAccessResult></read></ConfirmedServiceResponse></confirmed-ResponsePDU></query></iq>"), attributeTo, attributeFrom, attributeId, InvokeID, singleIntForRead);
         client.client.write(responseBuffer);

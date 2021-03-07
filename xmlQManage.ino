@@ -1,4 +1,5 @@
-void xmlManage(void) {
+void xmlManage(char* _xmppStanza, int _xmppStanzaLength) {//
+
     boolean controlObject_flag = false;
     if (XMPP_8_2.type_get_flag) {
         if (XMPP_8_2.domainSpecific_flag) {//getNameList
@@ -117,9 +118,6 @@ void xmlManage(void) {
                         //String controlObjSubAttributeType = getSplitValue(ItemId, '$', 5);//f
                         CO_controlObjectRef = LDname + "/" + LNname + "$" + functionalConstrain + "$" + DOname;
 
-                        if (!huge_struct_data_flag) {
-                            norm_struct_data_flag = true;
-                        }
                         controlObject_flag = true;
                     } else  if (ItemId.startsWith(LD2LN1)) {
                         //CO_controlObjectRef => <LDname>/<LNname>$CO$<DOname>
@@ -132,18 +130,15 @@ void xmlManage(void) {
                         //String controlObjSubAttributeType = getSplitValue(ItemId, '$', 5);//f
                         CO_controlObjectRef = LDname + "/" + LNname + "$" + functionalConstrain + "$" + DOname;
 
-                        if (!huge_struct_data_flag) {
-                            norm_struct_data_flag = true;
-                        }
                         controlObject_flag = true;
                     }
-                    if (controlObject_flag) {
+                    if (controlObject_flag) {//iec61850-8-2 P.133 table.67
                         if (controlObjAttribute == "SBOw") {
                             IEC61850_8_2.controlSelectWithValue_flag = true;
                         } else if (controlObjAttribute == "Cancel") {
-                            //IEC61850_8_2.controlCancel_flag = true;
+                            IEC61850_8_2.controlCancel_flag = true;
                         } else if (controlObjAttribute == "Oper") {
-                            //IEC61850_8_2.controlOperate_flag = true;
+                            IEC61850_8_2.controlOperate_flag = true;
                         }
                     }
                 } else {//DataObject 13.3 setDataValues
@@ -186,34 +181,31 @@ void xmlManage(void) {
 
         XMPP_8_2.type_set_flag = false;
     }
-    xmlPostManage();
-}
-void xmlPostManage(void) {
-    bool manageDataStruct_flag = false;
-    if (huge_struct_data_flag) {
-        DEBUG_MSG_F("HUGE:");
-        DEBUG_MSG(SPIFFS.begin());
-        DEBUG_MSG_F("\n");
+    if (struct_data_flag) {//get hidden message
+        if (controlObject_flag) {//check both CO and struct
+            if (*(_xmppStanza + _xmppStanzaLength + 1) != '\0') {
+                DEBUG_MSG_F("listOfData structure: ");
+                DEBUG_MSG(_xmppStanza + _xmppStanzaLength + 1);
+                DEBUG_MSG_F("\n");
 
-        File dummyFile = SPIFFS.open("/file.txt", "r");
-        if (dummyFile) {
-            String structDataString = dummyFile.readStringUntil('\n');
-            DEBUG_MSG(structDataString);
-            DEBUG_MSG_F("\n");
+                XMLDocument xmlDocument;
+
+                DEBUG_MSG(ESP.getFreeHeap(), DEC);
+                DEBUG_MSG_F(" ==> ");
+                // check format that can parser & parse
+                //if (xmlDocument.Parse(xmppStanza.c_str()) != XML_SUCCESS) {
+                if (xmlDocument.Parse(_xmppStanza + _xmppStanzaLength + 1) != XML_SUCCESS) {
+                    DEBUG_MSG_F("Error parsing\n");
+                    return;
+                }
+                DEBUG_MSG(ESP.getFreeHeap(), DEC);
+                DEBUG_MSG_F("\n");
+
+                XMLElement* root = xmlDocument.RootElement();
+
+                xmlDocument.Clear();
+            }
         }
-        dummyFile.close();
-
-        manageDataStruct_flag = true;
-
-        huge_struct_data_flag = false;
-    }
-    if (norm_struct_data_flag) {
-        manageDataStruct_flag = true;
-
-        norm_struct_data_flag = false;
-    }
-    if (manageDataStruct_flag) {
-
-        manageDataStruct_flag = false;
+        struct_data_flag = false;
     }
 }
