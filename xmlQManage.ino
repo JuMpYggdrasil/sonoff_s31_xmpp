@@ -208,4 +208,5 @@ void xmlManage(char* _xmppStanza, int _xmppStanzaLength) {//
         }
         struct_data_flag = false;
     }
+    ESP.wdtFeed();
 }

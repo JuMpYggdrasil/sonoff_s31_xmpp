@@ -384,6 +384,7 @@ XMPPClient client(xmppServer, 5223);//5223
 void setup()
 {
     SetupStringReserve();//set to avoid heap crash
+    ESP.wdtDisable();
 
 #ifdef USE_CSE7766
     cse7766.setRX(1);
@@ -541,6 +542,7 @@ void loop() {
     //===================================
 #ifdef USE_CSE7766
     cse7766.handle();// CSE7766 handle
+    ESP.wdtFeed();
 #endif
 
 
@@ -550,21 +552,26 @@ void loop() {
 
 
 #ifdef USE_WEB_SERVER
-    server.handleClient();//=======================================
+    server.handleClient();
+    ESP.wdtFeed();
     MDNS.update();
+    ESP.wdtFeed();
 #endif
 
+    ESP.wdtFeed();
     yield();// Give a time for ESP
 }
 void doConnect()
 {
 #ifdef USE_WIFI_CONNECT
     if (WiFi.status() != WL_CONNECTED) {
+        ESP.wdtDisable();
         if (!wc.autoConnect()) wc.startConfigurationPortal(AP_WAIT);
     }
 #else
     if (WiFi.status() != WL_CONNECTED)
     {
+        ESP.wdtDisable();
         DEBUG_MSG_F("Starting wifi\n");
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED)
@@ -591,8 +598,10 @@ void doConnect()
             /* Connected, let everyone   know that we're online */
             client.sendPresence();
             client.sendMessage(USERNAMERECEIVE, "I am online");
+            ESP.wdtEnable(WDTO_8S);
         }
     }
+    ESP.wdtFeed();
 }
 String getSplitValue(String data, char separator, int index)
 {

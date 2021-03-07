@@ -66,6 +66,7 @@ void xmlResponse(void) {
 
         IEC61850_8_2.getLDDir_flag = false;
     }
+    ESP.wdtFeed();
 }
 void SBO_CO_norm_secure_state_machine_run(void) {
     switch (SBO_CO_norm_secure_state)

@@ -223,6 +223,7 @@ void xmlParser(char* _xmppStanza, int _xmppStanzaLength) {
     //    xmlDocument.Print(&printer);
     //    Serial.println();
     //    Serial.println(printer.CStr());
+    ESP.wdtFeed();
 }
 
 void parseDomainId(XMLElement * domain_specific_x) {
