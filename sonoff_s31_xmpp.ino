@@ -111,7 +111,11 @@
 
 #include <XMPPClient.h>
 #include <tinyxml2.h>
+#include <time.h>
 //#include "FS.h"
+
+int timezone = 7 * 3600;
+int dst = 0;
 
 #define USERNAME "esp"//"esp@XMPP.egat.co.th"  "esp"
 #define DOMAIN "XMPP.egat.co.th"
@@ -125,21 +129,102 @@
 //*****************************************************************************************
 // IEC61850 Data Model
 //*****************************************************************************************
-//IED  LD  LN    DO     DA
+//IED  LD  LN    DO     DA (FC)
 //IED1
 //IED1_LD1
 //IED1_LD1_LLN0
 //IED1_LD1_LLN0_LLName
 //IED1_LD1_LLN0_Mod //mode
+//IED1_LD1_LLN0_Mod_stVal             (ST)
+//IED1_LD1_LLN0_Mod_q                 (ST)
+//IED1_LD1_LLN0_Mod_t                 (ST)
+//IED1_LD1_LLN0_Mod_ctlModel          (CF)
 //IED1_LD1_LLN0_Beh
+//IED1_LD1_LLN0_Beh_stVal             (ST)
+//IED1_LD1_LLN0_Beh_q                 (ST)
+//IED1_LD1_LLN0_Beh_t                 (ST)
 //IED1_LD1_LLN0_Health
+//IED1_LD1_LLN0_Health_stVal          (ST)
+//IED1_LD1_LLN0_Health_q              (ST)
+//IED1_LD1_LLN0_Health_t              (ST)
 //IED1_LD1_LLN0_NamePlt
+//IED1_LD1_LLN0_NamPlt_vendor         (DC)
+//IED1_LD1_LLN0_NamPlt_swRev          (DC)
+//IED1_LD1_LLN0_NamPlt_d              (DC)
+//IED1_LD1_LLN0_NamPlt_dU             (DC)
+//IED1_LD1_LLN0_NamPlt_configRev      (DC)
+//IED1_LD1_LLN0_NamPlt_ldNs           (EX)
 //IED1_LD1_LPHD1
 //IED1_LD1_LPHD1_LLName
 //IED1_LD1_LPHD1_PhyNam
-//IED1_LD1_LPHD1_PhyHealt
+//IED1_LD1_LPHD1_PhyNam_vendor        (DC)
+//IED1_LD1_LPHD1_PhyNam_hwRev         (DC)
+//IED1_LD1_LPHD1_PhyHealth
+//IED1_LD1_LPHD1_PhyHealth_stVal      (ST)
+//IED1_LD1_LPHD1_PhyHealth_q          (ST)
+//IED1_LD1_LPHD1_PhyHealth_t          (ST)
 //IED1_LD1_LPHD1_Proxy
+//IED1_LD1_LPHD1_Proxy_stVal          (ST)
+//IED1_LD1_LPHD1_Proxy_q              (ST)
+//IED1_LD1_LPHD1_Proxy_t              (ST)
 //IED1_LD1_GGIO1
+//IED1_LD1_GGIO1_LLName
+//IED1_LD1_GGIO1_Mod
+//IED1_LD1_GGIO1_Mod_stVal            (ST)
+//IED1_LD1_GGIO1_Mod_q                (ST)
+//IED1_LD1_GGIO1_Mod_t                (ST)
+//IED1_LD1_GGIO1_Mod_ctlModel         (CF)
+//IED1_LD1_GGIO1_Beh
+//IED1_LD1_GGIO1_Beh_stVal            (ST)
+//IED1_LD1_GGIO1_Beh_q                (ST)
+//IED1_LD1_GGIO1_Beh_t                (ST)
+//IED1_LD1_GGIO1_Health
+//IED1_LD1_GGIO1_Health_stVal         (ST)
+//IED1_LD1_GGIO1_Health_q             (ST)
+//IED1_LD1_GGIO1_Health_t             (ST)
+//IED1_LD1_GGIO1_NamPlt
+//IED1_LD1_GGIO1_NamPlt_vendor        (DC)
+//IED1_LD1_GGIO1_NamPlt_swRev         (DC)
+//IED1_LD1_GGIO1_NamPlt_d             (DC)
+//IED1_LD1_GGIO1_NamPlt_dU            (DC)
+//IED1_LD1_GGIO1_NamPlt_configRev     (DC)
+//IED1_LD1_GGIO1_NamPlt_ldNs          (EX)
+//IED1_LD1_GGIO1_AnIn1                    //<DO name="AnIn1" type="DFE_MV_1" />
+//IED1_LD1_GGIO1_AnIn1_instMag        (MX)
+//IED1_LD1_GGIO1_AnIn1_instMag.i      (MX)
+//IED1_LD1_GGIO1_AnIn1_instMag.f      (MX)
+//IED1_LD1_GGIO1_AnIn1_mag            (MX)
+//IED1_LD1_GGIO1_AnIn1_mag.i          (MX)
+//IED1_LD1_GGIO1_AnIn1_mag.f          (MX)
+//IED1_LD1_GGIO1_AnIn1_q              (MX)
+//IED1_LD1_GGIO1_AnIn1_t              (MX)
+//IED1_LD1_GGIO1_AnIn1_subEna         (SV)
+//IED1_LD1_GGIO1_AnIn1_subMag         (SV)
+//IED1_LD1_GGIO1_AnIn1_subMag.i       (SV)
+//IED1_LD1_GGIO1_AnIn1_subMag.f       (SV)
+//IED1_LD1_GGIO1_AnIn1_subQ           (SV)
+//IED1_LD1_GGIO1_AnIn1_subID          (SV)
+//IED1_LD1_GGIO1_AnIn1_dU             (DC)
+//
+//IED1_LD1_CSWI1
+//IED1_LD1_CSWI1_LLName
+//IED1_LD1_CSWI1_Mod
+//IED1_LD1_CSWI1_Beh
+//IED1_LD1_CSWI1_Health
+//IED1_LD1_CSWI1_NamPlt
+//IED1_LD1_CSWI1_Pos
+//IED1_LD1_CSWI1_Pos_stVal            (ST)
+//IED1_LD1_CSWI1_Pos_q                (ST)
+//IED1_LD1_CSWI1_Pos_t                (ST)
+//IED1_LD1_CSWI1_Pos_SBOW             (CO)
+//IED1_LD1_CSWI1_Pos_Cancel           (CO)
+//IED1_LD1_CSWI1_Pos_subEna           (SV)
+//IED1_LD1_CSWI1_Pos_subVal           (SV)
+//IED1_LD1_CSWI1_Pos_subQ             (SV)
+//IED1_LD1_CSWI1_Pos_subID            (SV)
+//IED1_LD1_CSWI1_Pos_ctlModel         (CF)
+//IED1_LD1_CSWI1_Pos_sboTimeout       (CF)
+//IED1_LD1_CSWI1_Pos_dU               (DC)
 
 
 #define LD1 "IEDNameLDINst"     // Specify domainId DER1LD1
@@ -260,7 +345,7 @@ const char WEB_BODY_HTML_END[] PROGMEM = "</div></body></html>";//with end conte
 const char WEB_SCRIPT_START[] PROGMEM = "</div></body><script>";//with end content
 const char WEB_SCRIPT_HTML_END[] PROGMEM = "</script></html>";
 
-File fsUploadFile;
+//File fsUploadFile;
 
 #ifdef USE_CSE7766
 CSE7766 cse7766;
@@ -414,6 +499,7 @@ void setup()
     //bool spiffsResult = SPIFFS.begin();
 
     server.on(String(F("/")).c_str(), HTTP_GET, handleRoot);
+    server.on(String(F("/time")).c_str(), HTTP_GET, handleTime);
     //    server.on(String(F("/deleteAll")).c_str(), HTTP_GET, []() {
     //        //delete file??
     //        server.send_P(200, text_plain, PSTR("delete all"));
@@ -461,7 +547,7 @@ void setup()
         xValue.concat(F(","));
         xValue.concat(String(cse7766.getEnergy()));
         xValue.concat(F(","));
-        xValue.concat(WiFi.SSID());
+        xValue.concat(WiFi.SSID()+" "+ESP.getFreeHeap());
 
         server.send(200, "text/plain", xValue);//(comma format)
     });
@@ -481,10 +567,17 @@ void setup()
     startWiFi();
 #endif
 
+    configTime(timezone, dst, "pool.ntp.org", "time.nist.gov");
+    while (!time(nullptr)) {
+        delay(1000);
+    }
+
     digitalWrite(RELAY_PIN, HIGH);//turn on red led
 
 }
 
+uint32_t mLastTime = 0;
+uint32_t mTimeSeconds = 0;
 void loop() {
     //===================================
     //       Parser 61850 Part
@@ -545,6 +638,25 @@ void loop() {
     ESP.wdtFeed();
 #endif
 
+    if ((millis() - mLastTime) >= 1000) {
+        // Time
+        mLastTime = millis();
+        mTimeSeconds++;
+
+        if (mTimeSeconds % 60 == 0) { // Each minute
+            configTime(timezone, dst, "pool.ntp.org", "time.nist.gov");
+            //need some time delay slot****
+        }
+
+//        if (mTimeSeconds % 6 == 0) { // Each 6 sec 
+//            time_t now = time(nullptr);//now type is long,%ld
+//            char nowCString[20];
+//            sprintf(nowCString, "%ld", now);
+//            debugV("epoch: %s", nowCString);//epoch:unix timestamp
+//            // struct tm* p_tm = localtime(&now);
+//            // debugD("t: %s", asctime (p_tm));//human readable
+//        }
+    }
 
 
 
@@ -565,13 +677,11 @@ void doConnect()
 {
 #ifdef USE_WIFI_CONNECT
     if (WiFi.status() != WL_CONNECTED) {
-        ESP.wdtDisable();
         if (!wc.autoConnect()) wc.startConfigurationPortal(AP_WAIT);
     }
 #else
     if (WiFi.status() != WL_CONNECTED)
     {
-        ESP.wdtDisable();
         DEBUG_MSG_F("Starting wifi\n");
         WiFi.begin(ssid, password);
         while (WiFi.status() != WL_CONNECTED)

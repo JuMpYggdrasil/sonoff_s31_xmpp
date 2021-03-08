@@ -1,19 +1,19 @@
 void handleRoot() {
-//    String rootPage = "";
-//    rootPage.concat(FPSTR(WEB_HEAD));
-//    rootPage.concat(FPSTR(WEB_STYLE));
-//    rootPage.concat(FPSTR(WEB_BODY_START));
-//    rootPage.concat(FPSTR(WEB_SIDENAV));
-//    rootPage.concat(FPSTR(WEB_CONTENT_START));
-//    rootPage.concat(F("<div style=\"font-weight:bold\">Upload</div>"));
-//    rootPage.concat(F("<form action='/upload' method='post' enctype='multipart/form-data'>"));
-//    rootPage.concat(F("<input type='file' name='uploadBtn'>"));
-//    rootPage.concat(F("<input class='button' type='submit'>"));
-//    rootPage.concat(F("</form>"));
-//
-//    rootPage.concat(FPSTR(WEB_BODY_HTML_END));
-//
-//    server.send(200, "text / html", rootPage);
+    //    String rootPage = "";
+    //    rootPage.concat(FPSTR(WEB_HEAD));
+    //    rootPage.concat(FPSTR(WEB_STYLE));
+    //    rootPage.concat(FPSTR(WEB_BODY_START));
+    //    rootPage.concat(FPSTR(WEB_SIDENAV));
+    //    rootPage.concat(FPSTR(WEB_CONTENT_START));
+    //    rootPage.concat(F("<div style=\"font-weight:bold\">Upload</div>"));
+    //    rootPage.concat(F("<form action='/upload' method='post' enctype='multipart/form-data'>"));
+    //    rootPage.concat(F("<input type='file' name='uploadBtn'>"));
+    //    rootPage.concat(F("<input class='button' type='submit'>"));
+    //    rootPage.concat(F("</form>"));
+    //
+    //    rootPage.concat(FPSTR(WEB_BODY_HTML_END));
+    //
+    //    server.send(200, "text / html", rootPage);
 
     server.send_P(200, text_plain, PSTR("IED (support IEC61850 on ESP8266)"));
 }
@@ -31,6 +31,16 @@ void handleNotFound() {
     //    }
     //    server.send(404, "text/plain", message);
     server.send_P(404, text_plain, PSTR("File Not Found"));
+}
+void handleTime() {
+    time_t now = time(nullptr);//now type is long,%ld
+    char nowCString[20];
+    sprintf(nowCString, "%ld", now);
+    //            debugV("epoch: %s", nowCString);//epoch:unix timestamp
+    //            // struct tm* p_tm = localtime(&now);
+    //            // debugD("t: %s", asctime (p_tm));//human readable
+
+    server.send(200, "text/plain", nowCString);
 }
 //void handleFileUpload() {
 //    //if (server.uri() != "/info") return;
